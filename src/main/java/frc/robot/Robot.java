@@ -4,50 +4,57 @@
 
 package frc.robot;
 
+import com.ctre.phoenix6.hardware.TalonFX;
+
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-/**
- * The methods in this class are called automatically corresponding to each mode, as described in
- * the TimedRobot documentation. If you change the name of this class or the package after creating
- * this project, you must also update the Main.java file in the project.
- */
 public class Robot extends TimedRobot {
-  /**
-   * This function is run when the robot is first started up and should be used for any
-   * initialization code.
-   */
-  public Robot() {}
+
+  TalonFX motor1 = new TalonFX(1);
+  TalonFX motor2 = new TalonFX(2);
+  XboxController controller = new XboxController(0);
+
+  Timer autoTimer = new Timer();
+  boolean autoForward = true;
+
+  boolean motor2On = false;
+  boolean lastB = false;
+  Timer motor2Timer = new Timer();
 
   @Override
-  public void robotPeriodic() {}
+  public void autonomousInit() {
+    autoTimer.restart();
+  }
 
   @Override
-  public void autonomousInit() {}
+  public void autonomousPeriodic() {
+    if (autoTimer.hasElapsed(3)) {
+      autoForward = !autoForward;
+      autoTimer.restart();
+    }
+    motor1.set(autoForward ? 0.5 : -0.5);
+    motor2.set(autoForward ? 0.5 : -0.5);
+  }
 
   @Override
-  public void autonomousPeriodic() {}
+  public void teleopPeriodic() {
+    motor1.set(controller.getAButton() ? 0.5 : 0);
 
-  @Override
-  public void teleopInit() {}
+    boolean b = controller.getBButton();
+    if (b && !lastB) {
+      motor2On = !motor2On;
+      motor2Timer.restart();
+    }
+    lastB = b;
 
-  @Override
-  public void teleopPeriodic() {}
+    if (motor2On && motor2Timer.hasElapsed(10)) {
+      motor2On = false;
+    }
 
-  @Override
-  public void disabledInit() {}
-
-  @Override
-  public void disabledPeriodic() {}
-
-  @Override
-  public void testInit() {}
-
-  @Override
-  public void testPeriodic() {}
-
-  @Override
-  public void simulationInit() {}
-
-  @Override
-  public void simulationPeriodic() {}
+    motor2.set(motor2On ? 0.5 : 0);
+    SmartDashboard.putBoolean("Motor2 On", motor2On);
+  }
 }
